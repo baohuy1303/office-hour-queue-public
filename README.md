@@ -39,12 +39,13 @@ flowchart LR
     GH -- "deploy token" --> SWA
 ```
 
-Everything in Azure is created by Terraform (`infra/`), with its state kept in Azure Storage.
+All of the Azure resources are created with Terraform (`infra/`).
 
-- **Real-time:** SignalR works as a doorbell. After any change, the server sends `QueueChanged` to that course's pages, and they re-fetch over REST.
-- **Secrets:** the database connection string lives in Key Vault. The API reads it at startup with its Managed Identity, so no password is in code, config, or GitHub.
-- **Deploys:** GitHub Actions signs in to Azure with OIDC (a short-lived token per run, trusted only for pushes to `main`), builds once, and deploys the output.
-- **Database:** EF Core migrations run when the API starts, so a deploy also updates the schema.
+- **Live updates:** when something changes, the server tells every open page for that course, and each page reloads its data.
+- **Secrets:** the database password is kept in Key Vault, not in the code. The API gets it using its own Azure identity, so no password is stored in the repo or in GitHub.
+- **Deploys:** every push to `main` builds and deploys the app with GitHub Actions. It signs in to Azure with a short-lived token for each run instead of a saved password.
+- **Database:** schema changes are applied automatically when the API starts.
+- **Monitoring:** requests, errors, and logs are sent to Application Insights.
 
 ## Tech stack
 
@@ -75,35 +76,4 @@ npm --prefix web run dev             # frontend on http://localhost:5173
 
 `api/OfficeHours.Api.http` has a request for every endpoint. To be the admin locally, register the account whose email matches `Admin:Email` in `api/appsettings.json`.
 
-## Deploy your own copy
-
-You need the Azure CLI, Terraform, and the GitHub CLI, signed in to each.
-
-1. **State storage:** run `infra/bootstrap.sh` once. Put the storage account name it prints into the `backend` block in `infra/providers.tf`.
-2. **Variables:** copy `infra/terraform.tfvars.example` to `infra/terraform.tfvars` and set your `subscription_id`. Also set:
-   - `github_repo`: your repo as GitHub's tokens name it, `owner@ownerId/repo@repoId` (`gh api repos/OWNER/REPO` shows both ids)
-   - `custom_domain`: your frontend's address, like `ohq.example.com`
-3. **Infrastructure:** the custom domain needs a CNAME record pointing at the Static Web App before Azure accepts it. So apply once with `-target=azurerm_static_web_app.main`, point the CNAME at the `web_default_host` output, then apply everything:
-   ```bash
-   terraform -chdir=infra init
-   terraform -chdir=infra plan -out=main.tfplan
-   terraform -chdir=infra apply main.tfplan
-   ```
-4. **GitHub settings:** run `infra/github-sync.sh`. It copies the Terraform outputs into the repo's Actions secrets and variables.
-5. **Deploy:** push to `main`, or run both workflows from the Actions tab.
-6. **Admin:** register the `Admin:Email` account right away, before sharing the link.
-
-## Costs
-
-| Resource | Tier | Cost |
-|---|---|---|
-| Azure SQL | Basic (5 DTU, 2 GB) | about $5/month |
-| App Service | F1 | free |
-| Static Web Apps | Free | free |
-| Key Vault | Standard | pennies |
-| Application Insights + Log Analytics | pay as you go, 0.1 GB/day cap | free under 5 GB/month |
-| Terraform state storage | Standard LRS | pennies |
-
-F1 allows 5 WebSocket connections at once and has no Always On, so the first request after the API sits idle takes a few seconds. Set `app_service_sku = "B1"` (about $13/month) for more.
-
-<sub>This is a public mirror of the project for viewing. The live site deploys from a separate private repo, so this copy may sometimes be a little behind.</sub>
+<sub>This is a public copy for viewing. The live site runs from a separate private repo, so this copy may sometimes be a little behind.</sub>
