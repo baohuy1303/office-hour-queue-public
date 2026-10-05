@@ -1,0 +1,27 @@
+# .NET build output
+bin/
+obj/
+publish/
+*.zip
+
+# Node / Vite
+node_modules/
+dist/
+*.local
+npm-debug.log*
+
+# Terraform: keep .terraform.lock.hcl, never commit state or variable files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+
+# Editors and OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store

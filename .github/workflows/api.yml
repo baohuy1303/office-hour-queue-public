@@ -1,0 +1,45 @@
+# Builds the API and deploys it to App Service on every push to main that changes it.
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths: ["api/**", ".github/workflows/api.yml"]
+  workflow_dispatch: # adds a "Run workflow" button in the Actions tab
+
+# id-token: write lets the run ask GitHub for its OIDC token, which azure/login trades for an Azure one.
+permissions:
+  id-token: write
+  contents: read
+
+# Never run two deploys at once.
+concurrency: deploy-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build
+        run: dotnet publish api -c Release -o publish
+
+      # Signs in as id-ohq-github. No password: Azure trusts this run's GitHub token.
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Zips the publish folder and deploys it, like `az webapp deploy` did by hand.
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.API_APP_NAME }}
+          package: publish
+
+      - name: Check the API is up
+        run: curl --fail --retry 10 --retry-delay 10 --retry-all-errors "${{ vars.API_URL }}/api/health"

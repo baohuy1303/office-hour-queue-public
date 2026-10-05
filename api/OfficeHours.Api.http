@@ -1,0 +1,164 @@
+@OfficeHours.Api_HostAddress = http://localhost:5080
+
+# Which course to use, by the slug in its link.
+@slug = cs315
+
+# A TA account for trying things locally.
+@email = ta@example.com
+@password = a-long-password
+
+# Paste the accessToken from the "Sign in" response here. It lasts an hour.
+@accessToken = paste-the-access-token-here
+
+# Paste the refreshToken from the same response here to try "Renew the token".
+@refreshToken = paste-the-refresh-token-here
+
+# A second account to add as a co-TA. Create it with "Create an account" first.
+@coTaEmail = co-ta@example.com
+
+# Paste a userId from "The course's TAs" here to try removing that TA.
+@taUserId = paste-a-user-id-here
+
+# The join code from the "Add a course" response (or the TA queue).
+@joinCode = ABC123
+
+# Paste an id from a "Join the queue" or "Call the next student" response here.
+@ticketId = 00000000-0000-0000-0000-000000000000
+
+### Health check
+GET {{OfficeHours.Api_HostAddress}}/api/health
+
+### Directory: every course, open or closed, and how many are waiting
+GET {{OfficeHours.Api_HostAddress}}/api/courses
+
+### TA: create an account
+POST {{OfficeHours.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### TA: sign in (returns accessToken and refreshToken)
+POST {{OfficeHours.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### TA: renew the token before it runs out (returns new tokens)
+POST {{OfficeHours.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### TA: which account the token belongs to
+GET {{OfficeHours.Api_HostAddress}}/api/auth/manage/info
+Authorization: Bearer {{accessToken}}
+
+### TA: add a course (you become its first TA; returns its join code)
+POST {{OfficeHours.Api_HostAddress}}/api/courses
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "code": "CS315",
+  "name": "Software Engineering"
+}
+
+### TA: your courses
+GET {{OfficeHours.Api_HostAddress}}/api/ta/courses
+Authorization: Bearer {{accessToken}}
+
+### Find a course from its join code alone
+POST {{OfficeHours.Api_HostAddress}}/api/courses/lookup
+Content-Type: application/json
+
+{
+  "joinCode": "{{joinCode}}"
+}
+
+### Course summary: open or closed, how many are waiting, estimated wait
+GET {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}
+
+### Join the course's queue (needs the join code, and the queue must be open)
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/queue
+Content-Type: application/json
+
+{
+  "name": "Alex",
+  "topic": "HW3 recursion",
+  "joinCode": "{{joinCode}}"
+}
+
+### My ticket: status, position, estimated wait
+GET {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/queue/{{ticketId}}
+
+### Leave the queue
+DELETE {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/queue/{{ticketId}}
+
+### TA: everyone being helped or waiting, plus the join code
+GET {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/queue
+Authorization: Bearer {{accessToken}}
+
+### TA: open the queue
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/queue/open
+Authorization: Bearer {{accessToken}}
+
+### TA: close the queue
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/queue/close
+Authorization: Bearer {{accessToken}}
+
+### TA: call the next student
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/queue/next
+Authorization: Bearer {{accessToken}}
+
+### TA: mark a student done
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/queue/{{ticketId}}/done
+Authorization: Bearer {{accessToken}}
+
+### TA: remove a student
+DELETE {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/queue/{{ticketId}}
+Authorization: Bearer {{accessToken}}
+
+### TA: clear the queue
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/queue/clear
+Authorization: Bearer {{accessToken}}
+
+### TA: make a new join code
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/join-code
+Authorization: Bearer {{accessToken}}
+
+### TA: the course's TAs
+GET {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/tas
+Authorization: Bearer {{accessToken}}
+
+### TA: add a co-TA by email (they need an account first)
+POST {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/tas
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "{{coTaEmail}}"
+}
+
+### TA: remove a TA (not yourself)
+DELETE {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}/ta/tas/{{taUserId}}
+Authorization: Bearer {{accessToken}}
+
+### TA: delete the course
+DELETE {{OfficeHours.Api_HostAddress}}/api/courses/{{slug}}
+Authorization: Bearer {{accessToken}}
+
+### Admin: every TA account and its courses (sign in as the Admin:Email account first)
+GET {{OfficeHours.Api_HostAddress}}/api/admin/tas
+Authorization: Bearer {{accessToken}}
+
+### Admin: delete a TA account (the TA endpoints above also work on any course for the admin)
+DELETE {{OfficeHours.Api_HostAddress}}/api/admin/tas/{{taUserId}}
+Authorization: Bearer {{accessToken}}

@@ -1,0 +1,41 @@
+# Builds the frontend and deploys it to Static Web Apps on every push to main that changes it.
+name: Deploy frontend
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", ".github/workflows/web.yml"]
+  workflow_dispatch: # adds a "Run workflow" button in the Actions tab
+
+permissions:
+  contents: read
+
+# Never run two deploys at once.
+concurrency: deploy-web
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # Vite bakes VITE_API_URL into the built files, so the site knows where the API is.
+      - name: Build
+        working-directory: web
+        run: npm ci && npm run build
+        env:
+          VITE_API_URL: ${{ vars.API_URL }}
+
+      # Uploads web/dist as-is. We built it above, so the action skips its own build.
+      - uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: web/dist
+          skip_app_build: true

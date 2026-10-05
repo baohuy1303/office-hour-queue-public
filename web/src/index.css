@@ -1,0 +1,125 @@
+@import 'tailwindcss';
+
+/* Design tokens from design.md. Light values first, dark values below.
+   Components use them through Tailwind classes like bg-panel or text-muted,
+   never as raw colors. */
+:root {
+  color-scheme: light;
+  --bg: #f5f3ed;
+  --panel: #ffffff;
+  --ink: #191917;
+  --muted: #716f68;
+  --faint: #9b9890;
+  --line: #ddd9cf;
+  --soft: #ebe8df;
+  --accent: #cf6540;
+  --accent-soft: #f6e5dc;
+  --good: #356147;
+  --good-soft: #e4efe8;
+  --warn: #85631c;
+  --warn-soft: #f4ecd6;
+  --bad: #a4433c;
+  --bad-soft: #f7e3e1;
+  --info: #2f6fb2;
+  --info-soft: #e3edf8;
+  --shadow: 0 12px 35px rgba(38, 32, 21, 0.07);
+}
+
+/* Dark mode only swaps the token values, so components never check the theme. */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #181816;
+  --panel: #222220;
+  --ink: #f5f1e8;
+  --muted: #aaa69d;
+  --faint: #7d7972;
+  --line: #3a3833;
+  --soft: #2c2a26;
+  --accent: #ed8058;
+  --accent-soft: #462b21;
+  --good: #8fc7a2;
+  --good-soft: #23362a;
+  --warn: #e1bd62;
+  --warn-soft: #3c321d;
+  --bad: #ef8c83;
+  --bad-soft: #462724;
+  --info: #7fb0e8;
+  --info-soft: #22313f;
+  --shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* Fonts, corner radii, and the view animation as Tailwind theme values.
+   Clearing --color-* turns off Tailwind's built-in palette (blue-500 and friends),
+   so only design.md's colors exist. */
+@theme {
+  --color-*: initial;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --radius-control: 9px;
+  --radius-tile: 10px;
+  --radius-card: 13px;
+  --radius-dialog: 15px;
+  --animate-view-in: view-in 0.2s ease both;
+
+  @keyframes view-in {
+    from {
+      opacity: 0.25;
+      transform: translateY(3px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* The tokens as Tailwind colors: bg-panel, text-ink, border-line, and so on.
+   "inline" makes the classes read the variables directly, so dark mode just works. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --shadow-card: var(--shadow);
+}
+
+@layer base {
+  /* design.md: no visible scrollbars on the page. */
+  html {
+    scrollbar-width: none;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.45 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
